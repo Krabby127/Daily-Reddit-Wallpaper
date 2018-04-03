@@ -90,8 +90,9 @@ def get_top_image(sub_reddit):
     :sub_reddit: name of the sub reddit
     :return: the image link
     """
-    submissions = sub_reddit.new(limit=10) if args.time == "new" else sub_reddit.hot(params={"t": args.time},
-                                                                                     limit=10)
+    # submissions = sub_reddit.get_new(limit=10) if args.time == "new" else sub_reddit.get_top(params={"t": args.time},
+    #                                                                                          limit=10)
+    submissions = sub_reddit.new if args.time == "new" else sub_reddit.hot();
     for submission in submissions:
         ret = {"id": submission.id}
         if not args.nsfw and submission.over_18:
@@ -145,8 +146,11 @@ def detect_desktop_environment():
         environment["command"] = "gsettings set org.mate.background picture-filename {save_location}"
     else:
         try:
-            info = subprocess.getoutput("xprop -root _DT_SAVE_MODE")
-            if ' = "xfce4"' in info:
+            # info = subprocess.getoutput("xprop -root _DT_SAVE_MODE")
+            info = subprocess.check_output("xprop -root _DT_SAVE_MODE")
+            # info = subprocess.Popen(['xprop', '-root', '_DT_SAVE_MODE'], stdout=subprocess.PIPE)
+            out, err = process.communicate()
+            if ' = "xfce4"' in out:
                 environment["name"] = "xfce"
         except (OSError, RuntimeError):
             environment = None
@@ -184,7 +188,10 @@ if __name__ == '__main__':
                                                                             id=image["id"],
                                                                             image_type=image['type'])
 
-        if not os.path.isfile(save_location):
+        if os.path.isfile(save_location):
+            sys.exit("Info: Image already exists, nothing to do, the program is" \
+                  " now exiting")
+        else:
             # Create folders if they don't exist
             dir = os.path.dirname(save_location)
             if not os.path.exists(dir):
